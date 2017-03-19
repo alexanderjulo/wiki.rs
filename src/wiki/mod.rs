@@ -13,7 +13,7 @@ use walkdir::WalkDir;
 use yaml_rust::YamlEmitter;
 use yaml_rust::yaml::Yaml;
 
-
+/// Will strip the path to a file from the base path and the file extension
 fn convert_path_to_url(base_path: &str, path: &str) -> String {
     let url = String::from(path);
     let url = url.trim_left_matches(base_path);
@@ -22,6 +22,7 @@ fn convert_path_to_url(base_path: &str, path: &str) -> String {
     String::from(url)
 }
 
+/// Will prefix the given URL with the base path and a file extension
 fn convert_url_to_path(base_path: &str, url: &str) -> String {
     let mut path = String::new();
     path.push_str(base_path);
@@ -203,7 +204,7 @@ impl Wiki {
             self.pages.truncate(0);
         }
 
-        for entry in WalkDir::new(self.path.clone()) {
+        for entry in WalkDir::new(&self.path) {
             let entry = entry.unwrap();
             let entry = entry.path();
             let entry_path_str = entry.to_str().unwrap();
