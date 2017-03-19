@@ -1,9 +1,3 @@
-extern crate frontmatter;
-extern crate hoedown;
-extern crate walkdir;
-extern crate yaml_rust;
-
-
 use std::fs::File;
 use std::io;
 use std::io::Read;
@@ -12,11 +6,12 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::str;
 
-use self::hoedown::{Markdown, Render};
-use self::hoedown::renderer::html::{self, Html};
-use self::walkdir::WalkDir;
-use self::yaml_rust::YamlEmitter;
-use self::yaml_rust::yaml::Yaml;
+use frontmatter;
+use hoedown::{Markdown, Render};
+use hoedown::renderer::html::{self, Html};
+use walkdir::WalkDir;
+use yaml_rust::YamlEmitter;
+use yaml_rust::yaml::Yaml;
 
 
 fn convert_path_to_url(base_path: &str, path: &str) -> String {
