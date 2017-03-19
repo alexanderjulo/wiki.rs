@@ -248,6 +248,16 @@ impl Wiki {
 
 #[cfg(test)]
 mod tests {
+    extern crate tempdir;
+    use self::tempdir::TempDir;
+    use super::Wiki;
+
+    fn make_tmp_wiki(dirname: &str) -> Wiki {
+        let dir = TempDir::new(dirname).expect("create temp dir");
+        let wiki = Wiki::new(dir.path().to_str().unwrap());
+        wiki
+    }
+
     #[test]
     fn test_convert_path_to_url() {
         assert_eq!(
@@ -268,5 +278,14 @@ mod tests {
             ),
             "/wikidir/lol/what/a/path.md"
         )
+    }
+
+    #[test]
+    fn test_get_page_empty() {
+        let wiki = make_tmp_wiki("empty_page");
+        match wiki.get_page("does_not_exist") {
+            Some(_) => panic!("We got a page although we should not have"),
+            None => ()
+        }
     }
 }
