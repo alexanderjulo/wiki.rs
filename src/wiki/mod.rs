@@ -88,6 +88,25 @@ impl Page {
         Ok(page)
     }
 
+    /// If you want to just create a new page object without reading
+    /// it from disk (i.e. if you want to create a new page) use this
+    pub fn new(base_path: PathBuf, path: PathBuf) -> Page {
+        let url = convert_path_to_url(
+            base_path.to_str().unwrap(),
+            path.to_str().unwrap()
+        );
+        Page{
+            base_path: base_path,
+            path: path,
+            url: String::from(url),
+            raw: String::from(""),
+            meta: None,
+            markdown_raw: String::from(""),
+            markdown: Markdown::new(""),
+            html: String::from(""),
+        }
+    }
+
     /// Reads the contents of the underlying files from the disk
     /// # Errors
     /// This will return an error if i.e. the reading of the file fails
@@ -215,6 +234,13 @@ impl Wiki {
             }
         }
         None
+    }
+
+    /// Will create a new page within this wiki using the given URL
+    /// It will not be persisted to disk until you call `Page::save_to_file`
+    pub fn add_page(&self, url: &str) -> Page {
+        let path = convert_url_to_path(self.path.to_str().unwrap(), url);
+        Page::new(self.path.clone(), PathBuf::from(path))
     }
 
 }
