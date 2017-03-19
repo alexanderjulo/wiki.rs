@@ -1,0 +1,12 @@
+[package]
+name = "wiki"
+version = "0.1.0"
+authors = ["Alexander Jung-Loddenkemper <alexander@julo.ch>"]
+[dependencies]
+walkdir = "1"
+yaml-rust = "0.3.5"
+frontmatter = "0.3.0"
+hoedown = "6.0.0"
+[lib]
+name = "wiki"
+path = "src/lib.rs"
