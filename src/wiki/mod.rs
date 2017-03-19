@@ -15,6 +15,7 @@ use std::str;
 use self::hoedown::{Markdown, Render};
 use self::hoedown::renderer::html::{self, Html};
 use self::walkdir::WalkDir;
+use self::yaml_rust::YamlEmitter;
 use self::yaml_rust::yaml::Yaml;
 
 
@@ -50,8 +51,10 @@ pub struct Page {
     raw: String,
     /// the YAML frontmatter, might be empty
     pub meta: Option<Yaml>,
-    /// the markdown body of the page, might be an empty string
-    pub markdown: Markdown,
+    /// the raw markdown body of the page, might be an empty string
+    pub markdown_raw: String,
+    /// the markdown body of the page
+    markdown: Markdown,
     /// the compiled HTML of the page
     pub html: String
 }
@@ -63,7 +66,7 @@ impl Page {
     /// # Errors
     /// This will return an error if i.e. the reading of the file fails
     /// because of lacking permissions or non utf-8 content
-    pub fn new(base_path: PathBuf, path: PathBuf) -> Result<Page, io::Error> {
+    pub fn new_from_file(base_path: PathBuf, path: PathBuf) -> Result<Page, io::Error> {
 
         let url = convert_path_to_url(
             base_path.to_str().unwrap(),
@@ -76,6 +79,7 @@ impl Page {
             url: String::from(url),
             raw: String::from(""),
             meta: None,
+            markdown_raw: String::from(""),
             markdown: Markdown::new(""),
             html: String::from(""),
         };
@@ -99,20 +103,56 @@ impl Page {
     /// Interprets the raw data, among other things loading the frontmatter
     /// and converting markdown to html.
     fn load(&mut self) {
-        let mut html = Html::new(html::Flags::empty(), 0);
-        match frontmatter::parse_and_find_content(self.raw.as_str()) {
+        let raw = self.raw.clone();
+        match frontmatter::parse_and_find_content(raw.as_str()) {
             Ok((meta, markdown)) => {
                 self.meta = meta;
-                self.markdown = Markdown::new(markdown);
-                self.html = String::from(
-                    html.render(&self.markdown).to_str().unwrap()
-                );
+                self.update_markdown(markdown);
             }
             Err(_) => ()
         }
     }
 
-    fn save_to_file(&self) -> Result<(), io::Error> {
+    /// Updates the markdown contents of the file and automatically
+    /// re-renders the html accordingly.
+    pub fn update_markdown(&mut self, markdown: &str) {
+        let mut html = Html::new(html::Flags::empty(), 0);
+        self.markdown_raw = String::from(markdown);
+        self.markdown = Markdown::new(markdown);
+        self.html = String::from(
+            html.render(&self.markdown).to_str().unwrap()
+        );
+    }
+
+    /// Use this method after having modified the page to update the internal
+    /// raw representation.
+    fn update_raw(&mut self) {
+        let mut buffer = String::new();
+
+        buffer.push_str("---\n");
+        match self.meta.as_ref() {
+            Some(yaml) => {
+                let mut meta_str = String::new();
+                {
+                    let mut emitter = YamlEmitter::new(&mut meta_str);
+                    emitter.dump(&yaml).unwrap();
+                }
+                buffer.push_str(meta_str.as_str());
+            }
+            None => ()
+        }
+        buffer.push_str("---\n");
+
+        buffer.push_str(self.markdown_raw.as_str());
+
+        self.raw = buffer;
+    }
+
+    /// Will write the current raw data to the underlying file system
+    /// # Errors
+    /// Might fail due to io related errors, i.e. permissions or disk space
+    pub fn save_to_file(&mut self) -> Result<(), io::Error> {
+        self.update_raw();
         let mut f = try!(File::create(self.path.as_path()));
         try!(f.write_all(self.raw.as_bytes()));
         try!(f.sync_all());
@@ -154,7 +194,8 @@ impl Wiki {
             let entry = entry.path();
             let entry_path_str = entry.to_str().unwrap();
             if entry.is_file() && entry_path_str.ends_with(".md") {
-                match Page::new(self.path.clone(), entry.to_path_buf()) {
+                match Page::new_from_file(self.path.clone(),
+                                          entry.to_path_buf()) {
                     Ok(page) => self.pages.push(page),
                     Err(e) => println!(
                         "Failed loading {}: {}",
