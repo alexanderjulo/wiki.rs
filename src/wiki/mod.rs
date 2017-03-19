@@ -61,7 +61,7 @@ impl Page {
     /// # Errors
     /// This will return an error if i.e. the reading of the file fails
     /// because of lacking permissions or non utf-8 content
-    pub fn new_from_file(base_path: PathBuf, path: PathBuf) -> Result<Page, io::Error> {
+    pub fn from_file(base_path: PathBuf, path: PathBuf) -> Result<Page, io::Error> {
 
         let url = convert_path_to_url(
             base_path.to_str().unwrap(),
@@ -208,8 +208,8 @@ impl Wiki {
             let entry = entry.path();
             let entry_path_str = entry.to_str().unwrap();
             if entry.is_file() && entry_path_str.ends_with(".md") {
-                match Page::new_from_file(self.path.clone(),
-                                          entry.to_path_buf()) {
+                match Page::from_file(self.path.clone(),
+                                      entry.to_path_buf()) {
                     Ok(page) => self.pages.push(page),
                     Err(e) => println!(
                         "Failed loading {}: {}",
