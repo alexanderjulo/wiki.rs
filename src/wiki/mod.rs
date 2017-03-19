@@ -227,7 +227,7 @@ impl Wiki {
     }
 
     /// Will get an individual page object given a URL
-    pub fn get(&self, url: &str) -> Option<&Page> {
+    pub fn get_page(&self, url: &str) -> Option<&Page> {
         for page in self.pages.iter() {
             if page.url == url {
                 return Some(page);
